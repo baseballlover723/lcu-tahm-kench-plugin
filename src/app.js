@@ -7,6 +7,17 @@ const SPAM_DURATION = 1_000; // ms
 const SPAM_PERIOD = 200; // ms
 const SENT_MESSAGES = new Set();
 
+const TAHM_KENCH_BASE_URL = 'https://tahm-ken.ch/team_builder';
+const REGION_ENDPOINT = 'lol-platform-config/v1/namespaces/LoginDataPacket/competitiveRegion';
+const MEMBERS_ENDPOINT = 'lol-lobby/v2/lobby/members';
+const CHAT_ENDPOINTS = {
+  base: '/lol-chat/v1/conversations',
+  suffix: '%40sec.na1.pvp.net/messages',
+};
+
+const CONVERSATIONS_EVENT = 'OnJsonApiEvent_lol-chat_v1_conversations';
+const LOBBY_EVENT = 'OnJsonApiEvent_lol-lobby_v2_comms';
+
 function testSub(ws, topics) {
   for (const topic of topics) {
     ws.subscribe(topic, (event) => {
@@ -18,11 +29,11 @@ function testSub(ws, topics) {
 }
 
 async function getRegion() {
-  return (await axios.get('lol-platform-config/v1/namespaces/LoginDataPacket/competitiveRegion')).data;
+  return (await axios.get(REGION_ENDPOINT)).data;
 }
 
 async function getPlayers() {
-  return (await axios.get('lol-lobby/v2/lobby/members')).data.map((p) => p.summonerName);
+  return (await axios.get(MEMBERS_ENDPOINT)).data.map((p) => p.summonerName);
 }
 
 function sendMessage(chatUrl, message, retriesLeft = 2) {
@@ -35,7 +46,7 @@ function sendMessage(chatUrl, message, retriesLeft = 2) {
       console.log(`send message error, retrying (${retriesLeft - 1} retries left)`);
       setTimeout(sendMessage, SPAM_DURATION, chatUrl, message, retriesLeft - 1);
     } else {
-      console.log('error: ', error);
+      console.error('error: ', error);
     }
   });
 }
@@ -44,7 +55,7 @@ async function spamLink(chatUrl, region, optionalPlayers) {
   const players = optionalPlayers || await getPlayers();
   for (let time = 0, i = 0; time < SPAM_DURATION; time += SPAM_PERIOD, i += 1) {
     setTimeout((player) => {
-      sendMessage(chatUrl, encodeURI(`https://tahm-ken.ch/team_builder/${region}/${player}`));
+      sendMessage(chatUrl, encodeURI(`${TAHM_KENCH_BASE_URL}/${region}/${player}`));
     }, time, players[i % players.length]);
   }
 }
@@ -60,7 +71,7 @@ function handleLobbyChat(region) {
       return;
     }
     // console.log('received party chat: ', event);
-    if (!/w(ha|ah)t('| i)?s t(he|eh) (link|website)\??/i.test(event.data.body)) {
+    if (!/(link|website)\??/i.test(event.data.body)) {
       console.log(`ignoring message "${event.data.body}" because it didn't match the regex`);
       return;
     }
@@ -72,12 +83,12 @@ function handleLobbyChat(region) {
 function handleLobbyMemberChange(region) {
   return async (event) => {
     // console.log('received lobby member change event: ', event);
-    if (Object.keys(event.data.players).length !== 5) {
+    if (Object.keys(event.data.players).length !== 2) {
       console.log('Not a full party, so ignoring');
       return;
     }
-    const chatUrl = `/lol-chat/v1/conversations/${event.data.partyId}%40sec.na1.pvp.net/messages`;
-    const players = Object.entries(event.data.players).map((arr) => arr[1].displayName);
+    const chatUrl = `${CHAT_ENDPOINTS.base}/${event.data.partyId}${CHAT_ENDPOINTS.suffix}`;
+    const players = Object.values(event.data.players).map((player) => player.gameName);
     await spamLink(chatUrl, region, players);
   };
 }
@@ -90,8 +101,8 @@ connector.on('connect', async (clientData) => {
   const ws = new RiotWebSocket(clientData);
 
   ws.on('open', () => {
-    ws.subscribe('OnJsonApiEvent_lol-chat_v1_conversations', handleLobbyChat(region));
-    ws.subscribe('OnJsonApiEvent_lol-lobby_v2_comms', handleLobbyMemberChange(region));
+    ws.subscribe(CONVERSATIONS_EVENT, handleLobbyChat(region));
+    ws.subscribe(LOBBY_EVENT, handleLobbyMemberChange(region));
     // testSub(ws, [
     //   // 'OnJsonApiEvent',
     //   // 'OnJsonApiEvent_chat_v1_session',
