@@ -33,17 +33,15 @@ function sendMessage(chatUrl, message, retriesLeft = 2) {
   }).catch((error) => {
     if (retriesLeft > 0) {
       console.log(`send message error, retrying (${retriesLeft - 1} retries left)`);
-      setTimeout((chatUrlInner, messageInner, retriesLeftInner) => {
-        sendMessage(chatUrlInner, messageInner, retriesLeftInner);
-      }, SPAM_DURATION, chatUrl, message, retriesLeft - 1);
+      setTimeout(sendMessage, SPAM_DURATION, chatUrl, message, retriesLeft - 1);
     } else {
       console.log('error: ', error);
     }
   });
 }
 
-async function spamLink(chatUrl, region, players) {
-  players ||= await getPlayers();
+async function spamLink(chatUrl, region, optionalPlayers) {
+  const players = optionalPlayers || await getPlayers();
   for (let time = 0, i = 0; time < SPAM_DURATION; time += SPAM_PERIOD, i += 1) {
     setTimeout((player) => {
       sendMessage(chatUrl, encodeURI(`https://tahm-ken.ch/team_builder/${region}/${player}`));
