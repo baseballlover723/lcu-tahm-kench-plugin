@@ -53,7 +53,7 @@ connector.on('connect', async (clientData) => {
 
   ws.on('open', () => {
     ws.subscribe('OnJsonApiEvent_lol-chat_v1_conversations', (event) => {
-      if (event.eventType !== 'Create' || event.data.type !== 'groupchat') {
+      if (event.eventType !== 'Create' || event.data.type !== 'groupchat' || !event.data.isHistorical) {
         return;
       }
       if (SENT_MESSAGES.has(event.data.id)) {
