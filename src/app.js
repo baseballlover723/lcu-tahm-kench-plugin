@@ -25,18 +25,25 @@ async function getPlayers() {
   return (await axios.get('lol-lobby/v2/lobby/members')).data.map((p) => p.summonerName);
 }
 
-function sendMessage(chatUrl, message) {
+function sendMessage(chatUrl, message, retriesLeft = 2) {
   axios.post(chatUrl, {
     body: message,
   }).then((response) => {
     SENT_MESSAGES.add(response.data.id);
   }).catch((error) => {
-    console.log('error: ', error);
+    if (retriesLeft > 0) {
+      console.log(`send message error, retrying (${retriesLeft - 1} retries left)`);
+      setTimeout((chatUrlInner, messageInner, retriesLeftInner) => {
+        sendMessage(chatUrlInner, messageInner, retriesLeftInner);
+      }, SPAM_DURATION, chatUrl, message, retriesLeft - 1);
+    } else {
+      console.log('error: ', error);
+    }
   });
 }
 
-async function spamLink(chatUrl, region) {
-  const players = await getPlayers();
+async function spamLink(chatUrl, region, players) {
+  players ||= await getPlayers();
   for (let time = 0, i = 0; time < SPAM_DURATION; time += SPAM_PERIOD, i += 1) {
     setTimeout((player) => {
       sendMessage(chatUrl, encodeURI(`https://tahm-ken.ch/team_builder/${region}/${player}`));
@@ -64,6 +71,19 @@ function handleLobbyChat(region) {
   };
 }
 
+function handleLobbyMemberChange(region) {
+  return async (event) => {
+    // console.log('received lobby member change event: ', event);
+    if (Object.keys(event.data.players).length !== 5) {
+      console.log('Not a full party, so ignoring');
+      return;
+    }
+    const chatUrl = `/lol-chat/v1/conversations/${event.data.partyId}%40sec.na1.pvp.net/messages`;
+    const players = Object.entries(event.data.players).map((arr) => arr[1].displayName);
+    await spamLink(chatUrl, region, players);
+  };
+}
+
 connector.on('connect', async (clientData) => {
   console.log('League Client has started, connecting websocket', clientData);
   axios.defaults.baseURL = `${clientData.protocol}://${clientData.address}:${clientData.port}`;
@@ -73,6 +93,7 @@ connector.on('connect', async (clientData) => {
 
   ws.on('open', () => {
     ws.subscribe('OnJsonApiEvent_lol-chat_v1_conversations', handleLobbyChat(region));
+    ws.subscribe('OnJsonApiEvent_lol-lobby_v2_comms', handleLobbyMemberChange(region));
     // testSub(ws, [
     //   // 'OnJsonApiEvent',
     //   // 'OnJsonApiEvent_chat_v1_session',
@@ -105,6 +126,8 @@ connector.on('connect', async (clientData) => {
     //   // 'OnJsonApiEvent_lol-lobby_v1_lobby',
     //   // 'OnJsonApiEvent_lol-lobby_v2_comms', // to get participant updates
     //   // 'OnJsonApiEvent_lol-lobby_v2_lobby',
+    //   // 'OnJsonApiEvent_lol-lobby_v1_parties',
+    //   // 'OnJsonApiEvent_lol-lobby_v2_party-active'
     //   // 'OnJsonApiEvent_lol-lobby_v2_received-invitations',
     //   // 'OnJsonApiEvent_lol-game-client-chat_v1_aas-messages',
     //   // 'OnJsonApiEvent_lol-game-client-chat_v1_buddies',
