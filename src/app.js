@@ -3,6 +3,9 @@ const axios = require('axios');
 const RiotWebSocket = require('./riotWebSocket');
 
 const connector = new LCUConnector();
+const SPAM_DURATION = 1_000; // ms
+const SPAM_PERIOD = 200; // ms
+const SENT_MESSAGES = new Set();
 
 function testSub(ws, topics) {
   for (const topic of topics) {
@@ -14,11 +17,38 @@ function testSub(ws, topics) {
   }
 }
 
-const SENT_MESSAGES = new Set();
-connector.on('connect', (clientData) => {
+async function getRegion() {
+  return (await axios.get('lol-platform-config/v1/namespaces/LoginDataPacket/competitiveRegion')).data;
+}
+
+async function getPlayers() {
+  return (await axios.get('lol-lobby/v2/lobby/members')).data.map((p) => p.summonerName);
+}
+
+function sendMessage(chatUrl, message) {
+  axios.post(chatUrl, {
+    body: message,
+  }).then((response) => {
+    SENT_MESSAGES.add(response.data.id);
+  }).catch((error) => {
+    console.log('error: ', error);
+  });
+}
+
+async function spamLink(chatUrl, region) {
+  const players = await getPlayers();
+  for (let time = 0, i = 0; time < SPAM_DURATION; time += SPAM_PERIOD, i += 1) {
+    setTimeout((player) => {
+      sendMessage(chatUrl, encodeURI(`https://tahm-ken.ch/team_builder/${region}/${player}`));
+    }, time, players[i % players.length]);
+  }
+}
+
+connector.on('connect', async (clientData) => {
   console.log('League Client has started, connecting websocket', clientData);
   axios.defaults.baseURL = `${clientData.protocol}://${clientData.address}:${clientData.port}`;
   axios.defaults.auth = { username: clientData.username, password: clientData.password };
+  const region = await getRegion();
   const ws = new RiotWebSocket(clientData);
 
   ws.on('open', () => {
@@ -31,15 +61,13 @@ connector.on('connect', (clientData) => {
         SENT_MESSAGES.delete(event.data.id);
         return;
       }
-      console.log('received party chat: ', event);
+      // console.log('received party chat: ', event);
+      if (!/w(ha|ah)t('| i)?s t(he|eh) (link|website)\??/i.test(event.data.body)) {
+        console.log(`ignoring message "${event.data.body}" because it didn't match the regex`);
+        return;
+      }
       const chatUrl = event.uri.substring(0, event.uri.lastIndexOf('/'));
-      axios.post(chatUrl, {
-        body: `you said: "${event.data.body}"`,
-      }).then((response) => {
-        SENT_MESSAGES.add(response.data.id);
-      }).catch((error) => {
-        console.log('error: ', error);
-      });
+      spamLink(chatUrl, region);
     });
     // testSub(ws, [
     //   // 'OnJsonApiEvent',
