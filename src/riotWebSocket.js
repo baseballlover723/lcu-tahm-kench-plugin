@@ -15,8 +15,8 @@ const MESSAGE_TYPES = {
 };
 
 module.exports = class RiotWebSocket extends WebSocket {
-  constructor(data) {
-    super(`wss://riot:${data.password}@127.0.0.1:${data.port}/`, 'wamp');
+  constructor(clientData) {
+    super(`wss://riot:${clientData.password}@127.0.0.1:${clientData.port}/`, 'wamp');
 
     this.session = null;
     this.on('message', this._onMessage.bind(this));
