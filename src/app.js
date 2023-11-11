@@ -3,7 +3,7 @@ const axios = require('axios');
 const RiotWebSocket = require('./riotWebSocket');
 
 const connector = new LCUConnector();
-const SPAM_DURATION = 1_000; // ms
+const SPAM_DURATION = 10_000; // ms
 const SPAM_PERIOD = 200; // ms
 const SENT_MESSAGES = new Set();
 
@@ -83,7 +83,7 @@ function handleLobbyChat(region) {
 function handleLobbyMemberChange(region) {
   return async (event) => {
     // console.log('received lobby member change event: ', event);
-    if (Object.keys(event.data.players).length !== 2) {
+    if (Object.keys(event.data.players).length !== 5) {
       console.log('Not a full party, so ignoring');
       return;
     }
