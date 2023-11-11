@@ -44,6 +44,26 @@ async function spamLink(chatUrl, region) {
   }
 }
 
+function handleLobbyChat(region) {
+  return async (event) => {
+    if (event.eventType !== 'Create' || event.data.type !== 'groupchat' || !event.data.isHistorical) {
+      return;
+    }
+    if (SENT_MESSAGES.has(event.data.id)) {
+      console.log(`ignoring message ${event.data.id} because we sent it`);
+      SENT_MESSAGES.delete(event.data.id);
+      return;
+    }
+    // console.log('received party chat: ', event);
+    if (!/w(ha|ah)t('| i)?s t(he|eh) (link|website)\??/i.test(event.data.body)) {
+      console.log(`ignoring message "${event.data.body}" because it didn't match the regex`);
+      return;
+    }
+    const chatUrl = event.uri.substring(0, event.uri.lastIndexOf('/'));
+    await spamLink(chatUrl, region);
+  };
+}
+
 connector.on('connect', async (clientData) => {
   console.log('League Client has started, connecting websocket', clientData);
   axios.defaults.baseURL = `${clientData.protocol}://${clientData.address}:${clientData.port}`;
@@ -52,23 +72,7 @@ connector.on('connect', async (clientData) => {
   const ws = new RiotWebSocket(clientData);
 
   ws.on('open', () => {
-    ws.subscribe('OnJsonApiEvent_lol-chat_v1_conversations', (event) => {
-      if (event.eventType !== 'Create' || event.data.type !== 'groupchat' || !event.data.isHistorical) {
-        return;
-      }
-      if (SENT_MESSAGES.has(event.data.id)) {
-        console.log(`ignoring message ${event.data.id} because we sent it`);
-        SENT_MESSAGES.delete(event.data.id);
-        return;
-      }
-      // console.log('received party chat: ', event);
-      if (!/w(ha|ah)t('| i)?s t(he|eh) (link|website)\??/i.test(event.data.body)) {
-        console.log(`ignoring message "${event.data.body}" because it didn't match the regex`);
-        return;
-      }
-      const chatUrl = event.uri.substring(0, event.uri.lastIndexOf('/'));
-      spamLink(chatUrl, region);
-    });
+    ws.subscribe('OnJsonApiEvent_lol-chat_v1_conversations', handleLobbyChat(region));
     // testSub(ws, [
     //   // 'OnJsonApiEvent',
     //   // 'OnJsonApiEvent_chat_v1_session',
