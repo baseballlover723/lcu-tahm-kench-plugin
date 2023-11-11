@@ -16,7 +16,7 @@
     "lint": "eslint \"**/*.js\""
   },
   "dependencies": {
-    "lcu-connector": "^2.1.3"
+    "lcu-connector": "baseballlover723/lcu-connector"
   },
   "devDependencies": {
     "eslint": "^8.53.0",
