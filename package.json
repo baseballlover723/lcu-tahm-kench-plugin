@@ -1,0 +1,29 @@
+{
+  "name": "league_tahm_kench",
+  "version": "1.0.0",
+  "description": "Automatically links to https://tahm-ken.ch/team_builder/ when you have a full party of 5",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/baseballlover723/league_tahm_kench.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "src/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/app.js",
+    "lint": "eslint \"**/*.js\""
+  },
+  "dependencies": {
+    "lcu-connector": "^2.1.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.53.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.0"
+  },
+  "keywords": [],
+  "author": "baseballlover723",
+  "license": "MIT"
+}
