@@ -3,7 +3,7 @@ const axios = require('axios');
 const RiotWebSocket = require('./riotWebSocket');
 
 const connector = new LCUConnector();
-const SPAM_DURATION = 5_000; // ms
+const SPAM_DURATION = 3_000; // ms
 const SPAM_PERIOD = 200; // ms
 const SENT_MESSAGES = new Set();
 
@@ -62,7 +62,11 @@ async function spamLink(chatUrl, region, optionalPlayers) {
 
 function handleLobbyChat(region) {
   return async (event) => {
-    if (event.eventType !== 'Create' || event.data.type !== 'groupchat' || !event.data.isHistorical) {
+    if (event.eventType !== 'Create') {
+      return;
+    }
+    // console.log('received party chat: ', event);
+    if (event.data.type !== 'groupchat') {
       return;
     }
     if (SENT_MESSAGES.has(event.data.id)) {
