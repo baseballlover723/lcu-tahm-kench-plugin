@@ -3,7 +3,7 @@ const axios = require('axios');
 const RiotWebSocket = require('./riotWebSocket');
 
 const connector = new LCUConnector();
-const SPAM_DURATION = 10_000; // ms
+const SPAM_DURATION = 5_000; // ms
 const SPAM_PERIOD = 200; // ms
 const SENT_MESSAGES = new Set();
 
