@@ -2,6 +2,7 @@
   "name": "league_tahm_kench",
   "version": "1.0.0",
   "description": "Automatically links to https://tahm-ken.ch/team_builder/ when you have a full party of 5",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/baseballlover723/league_tahm_kench.git"

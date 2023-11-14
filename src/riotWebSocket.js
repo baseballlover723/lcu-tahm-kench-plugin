@@ -1,6 +1,6 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const WebSocket = require('ws');
+import WebSocket from 'ws';
 
 const MESSAGE_TYPES = {
   WELCOME: 0,
@@ -14,7 +14,7 @@ const MESSAGE_TYPES = {
   EVENT: 8,
 };
 
-module.exports = class RiotWebSocket extends WebSocket {
+export default class RiotWebSocket extends WebSocket {
   constructor(clientData) {
     super(`wss://riot:${clientData.password}@127.0.0.1:${clientData.port}/`, 'wamp');
 
