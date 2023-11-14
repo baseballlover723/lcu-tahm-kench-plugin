@@ -33,7 +33,14 @@ async function getRegion() {
 }
 
 async function getPlayers() {
-  return (await axios.get(MEMBERS_ENDPOINT)).data.map((p) => p.summonerName);
+  try {
+    return (await axios.get(MEMBERS_ENDPOINT)).data.map((p) => p.summonerName);
+  } catch (e) {
+    if (e.response.status >= 500) {
+      console.log('error in getting players', e);
+    }
+    return [];
+  }
 }
 
 function sendMessage(chatUrl, message, retriesLeft = 2) {
@@ -54,9 +61,10 @@ function sendMessage(chatUrl, message, retriesLeft = 2) {
 async function spamLink(chatUrl, region, optionalPlayers) {
   const players = optionalPlayers || await getPlayers();
   for (let time = 0, i = 0; time < SPAM_DURATION; time += SPAM_PERIOD, i += 1) {
-    setTimeout((player) => {
-      sendMessage(chatUrl, encodeURI(`${TAHM_KENCH_BASE_URL}/${region}/${player}`));
-    }, time, players[i % players.length]);
+    const player = players[i % players.length];
+    setTimeout((url) => {
+      sendMessage(chatUrl, url);
+    }, time, player ? encodeURI(`${TAHM_KENCH_BASE_URL}/${region}/${player}`) : TAHM_KENCH_BASE_URL);
   }
 }
 
