@@ -28,8 +28,24 @@ function testSub(ws, topics) {
   }
 }
 
-async function getRegion() {
-  return (await axios.get(REGION_ENDPOINT)).data;
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+// A lot of retries since we call this on startup, and it takes a bit for the client to have this data available
+async function getRegion(retriesLeft = 20) {
+  try {
+    return (await axios.get(REGION_ENDPOINT)).data;
+  } catch (e) {
+    if ((e.code !== 'ECONNREFUSED' && e?.response?.status >= 500) || retriesLeft <= 0) {
+      console.log('error in getting region', e);
+      throw e;
+    }
+    await sleep(1000);
+    return getRegion(retriesLeft - 1);
+  }
 }
 
 async function getPlayers() {
@@ -38,6 +54,7 @@ async function getPlayers() {
   } catch (e) {
     if (e.response.status >= 500) {
       console.log('error in getting players', e);
+      throw e;
     }
     return [];
   }
@@ -109,6 +126,7 @@ connector.on('connect', async (clientData) => {
   console.log('League Client has started, connecting websocket', clientData);
   axios.defaults.baseURL = `${clientData.protocol}://${clientData.address}:${clientData.port}`;
   axios.defaults.auth = { username: clientData.username, password: clientData.password };
+  console.log('waiting for client to be fully open');
   const region = await getRegion();
   const ws = new RiotWebSocket(clientData);
 
