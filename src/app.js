@@ -1,6 +1,6 @@
-const LCUConnector = require('lcu-connector');
-const axios = require('axios');
-const RiotWebSocket = require('./riotWebSocket');
+import LCUConnector from 'lcu-connector';
+import axios from 'axios';
+import RiotWebSocket from './riotWebSocket.js';
 
 const connector = new LCUConnector();
 const SPAM_DURATION = 3_000; // ms
