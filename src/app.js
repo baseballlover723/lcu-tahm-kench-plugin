@@ -10,6 +10,7 @@ const SENT_MESSAGES = new Set();
 const TAHM_KENCH_BASE_URL = 'https://tahm-ken.ch/team_builder';
 const REGION_ENDPOINT = 'lol-platform-config/v1/namespaces/LoginDataPacket/competitiveRegion';
 const MEMBERS_ENDPOINT = 'lol-lobby/v2/lobby/members';
+const LOBBY_MATCHMAKING_SEARCH_ENDPOINT = 'lol-lobby/v2/lobby/matchmaking/search';
 const CHAT_ENDPOINTS = {
   base: '/lol-chat/v1/conversations',
   suffix: '%40sec.na1.pvp.net/messages',
@@ -85,6 +86,10 @@ async function spamLink(chatUrl, region, optionalPlayers) {
   }
 }
 
+async function startQueue() {
+  return await axios.post(LOBBY_MATCHMAKING_SEARCH_ENDPOINT).catch((error) => console.error(error));
+}
+
 function handleLobbyChat(region) {
   return async (event) => {
     if (event.eventType !== 'Create') {
@@ -100,12 +105,14 @@ function handleLobbyChat(region) {
       return;
     }
     // console.log('received party chat: ', event);
-    if (!/(link|website)\??/i.test(event.data.body)) {
+    if (/(link|website)\??/i.test(event.data.body)) {
+      const chatUrl = event.uri.substring(0, event.uri.lastIndexOf('/'));
+      await spamLink(chatUrl, region);
+    } else if (/start/i.test(event.data.body)) {
+      await startQueue();
+    } else {
       console.log(`ignoring message "${event.data.body}" because it didn't match the regex`);
-      return;
     }
-    const chatUrl = event.uri.substring(0, event.uri.lastIndexOf('/'));
-    await spamLink(chatUrl, region);
   };
 }
 
