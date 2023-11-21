@@ -1,6 +1,6 @@
 {
   "name": "lcu-tahm-kench-plugin",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Automatically links to https://tahm-ken.ch/team_builder/ when you have a full party of 5",
   "type": "module",
   "repository": {
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "axios": "^1.6.1",
-    "lcu-plugin": "1.0.0"
+    "lcu-plugin": "1.1.1"
   },
   "devDependencies": {
     "eslint": "^8.54.0",

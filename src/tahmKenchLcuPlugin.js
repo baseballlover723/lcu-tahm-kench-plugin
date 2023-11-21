@@ -46,7 +46,7 @@ export default class TahmKenchLcuPlugin extends LCUPlugin {
       resolve(resp.data);
     }).catch((error) => {
       if ((error.code !== 'ECONNREFUSED' && error?.response?.status >= 500) || retriesLeft <= 0) {
-        console.log('error in getting region', error);
+        this.error('error in getting region', error);
         reject(error);
       }
       setTimeout(() => {
@@ -60,7 +60,7 @@ export default class TahmKenchLcuPlugin extends LCUPlugin {
       return (await axios.get(MEMBERS_ENDPOINT)).data.map((p) => p.summonerName);
     } catch (e) {
       if (e.response.status >= 500) {
-        console.log('error in getting players', e);
+        this.error('error in getting players', e);
         throw e;
       }
       return [];
@@ -74,10 +74,10 @@ export default class TahmKenchLcuPlugin extends LCUPlugin {
       this.sentMessages.add(response.data.id);
     }).catch((error) => {
       if (retriesLeft > 0) {
-        console.log(`send message error, retrying (${retriesLeft - 1} retries left)`);
+        this.log(`send message error, retrying (${retriesLeft - 1} retries left)`);
         setTimeout(this.sendMessage, SPAM_DURATION, chatUrl, message, retriesLeft - 1);
       } else {
-        console.error('error: ', error);
+        this.error('error: ', error);
       }
     });
   }
@@ -97,18 +97,18 @@ export default class TahmKenchLcuPlugin extends LCUPlugin {
       if (event.eventType !== 'Create') {
         return;
       }
-      // console.log('received party chat: ', event);
+      // this.log('received party chat: ', event);
       if (event.data.type !== 'groupchat') {
         return;
       }
       if (this.sentMessages.has(event.data.id)) {
-        console.log(`ignoring message ${event.data.id} because we sent it`);
+        this.log(`ignoring message ${event.data.id} because we sent it`);
         this.sentMessages.delete(event.data.id);
         return;
       }
-      // console.log('received party chat: ', event);
-      if (!/(link|website)\??/i.test(event.data.body)) {
-        console.log(`ignoring message "${event.data.body}" because it didn't match the regex`);
+      // this.log('received party chat: ', event);
+      if (!/(link|website)/i.test(event.data.body)) {
+        // this.log(`ignoring message "${event.data.body}" because it didn't match the regex`);
         return;
       }
       const chatUrl = event.uri.substring(0, event.uri.lastIndexOf('/'));
@@ -118,9 +118,9 @@ export default class TahmKenchLcuPlugin extends LCUPlugin {
 
   handleLobbyMemberChange(region) {
     return async (event) => {
-      // console.log('received lobby member change event: ', event);
+      // this.log('received lobby member change event: ', event);
       if (Object.keys(event.data.players).length !== 5) {
-        console.log('Not a full party, so ignoring');
+        this.log('Not a full party, so ignoring');
         return;
       }
       const chatUrl = `${CHAT_ENDPOINTS.base}/${event.data.partyId}${CHAT_ENDPOINTS.suffix}`;
