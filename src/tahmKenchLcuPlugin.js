@@ -120,8 +120,14 @@ export default class TahmKenchLcuPlugin extends LcuPlugin {
   handleLobbyMemberChange(region) {
     return async (event) => {
       // this.log('received lobby member change event: ', event);
-      if (Object.keys(event.data.players).length !== 5) {
-        this.log('Not a full party, so ignoring');
+      const partySize = Object.keys(event.data.players).length;
+      if (this.lastPartySize === partySize) {
+        this.log(`Same party size (${partySize}), so ignoring`);
+        return;
+      }
+      this.lastPartySize = partySize;
+      if (partySize !== 5) {
+        this.log(`Not a full party (${partySize}), so ignoring`);
         return;
       }
       const chatUrl = `${CHAT_ENDPOINTS.base}/${event.data.partyId}${CHAT_ENDPOINTS.suffix}`;
