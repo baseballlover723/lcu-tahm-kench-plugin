@@ -1,6 +1,6 @@
 {
   "name": "lcu-tahm-kench-plugin",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Automatically links to https://tahm-ken.ch/team_builder/ when you have a full party of 5",
   "type": "module",
   "repository": {

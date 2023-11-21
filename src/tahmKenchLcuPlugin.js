@@ -28,6 +28,7 @@ export default class TahmKenchLcuPlugin extends LCUPlugin {
       this.getRegion().then((region) => {
         this.subscribeEvent(CONVERSATIONS_EVENT, this.handleLobbyChat(region));
         this.subscribeEvent(LOBBY_EVENT, this.handleLobbyMemberChange(region));
+        this.log('is ready');
         resolve();
       }).catch((error) => {
         reject(error);
