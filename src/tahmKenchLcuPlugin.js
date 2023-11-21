@@ -1,4 +1,4 @@
-import LCUPlugin from 'lcu-plugin';
+import LcuPlugin from 'lcu-plugin';
 import axios from 'axios';
 
 const SPAM_DURATION = 3_000; // ms
@@ -15,7 +15,7 @@ const CHAT_ENDPOINTS = {
 const CONVERSATIONS_EVENT = 'OnJsonApiEvent_lol-chat_v1_conversations';
 const LOBBY_EVENT = 'OnJsonApiEvent_lol-lobby_v2_comms';
 
-export default class TahmKenchLcuPlugin extends LCUPlugin {
+export default class TahmKenchLcuPlugin extends LcuPlugin {
   constructor() {
     super();
     this.sentMessages = new Set();
