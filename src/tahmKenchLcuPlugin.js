@@ -11,6 +11,7 @@ const CHAT_ENDPOINTS = {
   base: '/lol-chat/v1/conversations',
   suffix: '%40lol-pre-game.na1.pvp.net/messages',
 };
+const SUMMONER_ENDPOINT = 'lol-summoner/v2/summoners/puuid/'
 
 const CONVERSATIONS_EVENT = 'OnJsonApiEvent_lol-chat_v1_conversations';
 const LOBBY_EVENT = 'OnJsonApiEvent_lol-lobby_v2_comms';
@@ -58,7 +59,8 @@ export default class TahmKenchLcuPlugin extends LcuPlugin {
 
   async getPlayers() {
     try {
-      return (await axios.get(MEMBERS_ENDPOINT)).data.map((p) => p.summonerName);
+      const players = (await axios.get(MEMBERS_ENDPOINT)).data;
+      return (await Promise.all(players.map((p) => axios.get(SUMMONER_ENDPOINT + p.puuid)))).map((resp) => resp.data).map((p) => p.displayName + '-' + p.tagLine);
     } catch (e) {
       if (e.response.status >= 500) {
         this.error('error in getting players', e);
@@ -131,7 +133,7 @@ export default class TahmKenchLcuPlugin extends LcuPlugin {
         return;
       }
       const chatUrl = `${CHAT_ENDPOINTS.base}/${event.data.partyId}${CHAT_ENDPOINTS.suffix}`;
-      const players = Object.values(event.data.players).map((player) => player.gameName);
+      const players = Object.values(event.data.players).map((player) => player.gameName + '-' + player.tagLine);
       await this.spamLink(chatUrl, region, players);
     };
   }
