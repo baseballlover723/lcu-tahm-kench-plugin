@@ -9,7 +9,7 @@ const REGION_ENDPOINT = 'lol-platform-config/v1/namespaces/LoginDataPacket/compe
 const MEMBERS_ENDPOINT = 'lol-lobby/v2/lobby/members';
 const CHAT_ENDPOINTS = {
   base: '/lol-chat/v1/conversations',
-  suffix: '%40sec.na1.pvp.net/messages',
+  suffix: '%40lol-pre-game.na1.pvp.net/messages',
 };
 
 const CONVERSATIONS_EVENT = 'OnJsonApiEvent_lol-chat_v1_conversations';
