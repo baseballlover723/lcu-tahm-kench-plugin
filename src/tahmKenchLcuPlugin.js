@@ -5,7 +5,7 @@ const SPAM_DURATION = 3_000; // ms
 const SPAM_PERIOD = 200; // ms
 
 const TAHM_KENCH_BASE_URL = 'https://tahm-ken.ch/team_builder';
-const REGION_ENDPOINT = 'lol-platform-config/v1/namespaces/LoginDataPacket/competitiveRegion';
+const REGION_ENDPOINT = 'lol-rso-auth/v1/authorization';
 const MEMBERS_ENDPOINT = 'lol-lobby/v2/lobby/members';
 const CHAT_ENDPOINTS = {
   base: '/lol-chat/v1/conversations',
@@ -16,19 +16,18 @@ const SUMMONER_ENDPOINT = 'lol-summoner/v2/summoners/puuid/'
 const CONVERSATIONS_EVENT = 'OnJsonApiEvent_lol-chat_v1_conversations';
 const LOBBY_EVENT = 'OnJsonApiEvent_lol-lobby_v2_comms';
 
+// TODO check if the max party size is 5
 export default class TahmKenchLcuPlugin extends LcuPlugin {
-  constructor() {
-    super();
-    this.sentMessages = new Set();
-  }
-
   onConnect(clientData) {
     axios.defaults.baseURL = `${clientData.protocol}://${clientData.address}:${clientData.port}`;
     axios.defaults.auth = { username: clientData.username, password: clientData.password };
+
+    this.sentMessages = new Set();
+
     return this.createPromise((resolve, reject) => {
       this.getRegion().then((region) => {
-        this.subscribeEvent(CONVERSATIONS_EVENT, this.handleLobbyChat(region));
-        this.subscribeEvent(LOBBY_EVENT, this.handleLobbyMemberChange(region));
+        this.subscribeEvent(CONVERSATIONS_EVENT, this.handleLobbyChat(region["currentPlatformId"]));
+        this.subscribeEvent(LOBBY_EVENT, this.handleLobbyMemberChange(region["currentPlatformId"]));
         this.log('is ready');
         resolve();
       }).catch((error) => {
@@ -60,7 +59,10 @@ export default class TahmKenchLcuPlugin extends LcuPlugin {
   async getPlayers() {
     try {
       const players = (await axios.get(MEMBERS_ENDPOINT)).data;
-      return (await Promise.all(players.map((p) => axios.get(SUMMONER_ENDPOINT + p.puuid)))).map((resp) => resp.data).map((p) => p.displayName + '-' + p.tagLine);
+      return (await Promise.all(players.map((p) =>
+          axios.get(SUMMONER_ENDPOINT + p.puuid))))
+          .map((resp) => resp.data)
+          .map((p) => p.gameName + '-' + p.tagLine);
     } catch (e) {
       if (e.response.status >= 500) {
         this.error('error in getting players', e);
@@ -91,7 +93,7 @@ export default class TahmKenchLcuPlugin extends LcuPlugin {
       const player = players[i % players.length];
       setTimeout((url) => {
         this.sendMessage(chatUrl, url);
-      }, time, player ? encodeURI(`${TAHM_KENCH_BASE_URL}/${region}/${player}`) : TAHM_KENCH_BASE_URL);
+      }, time, player ? `${TAHM_KENCH_BASE_URL}?region=${encodeURIComponent(region)}&summoner=${encodeURIComponent(player)}` : TAHM_KENCH_BASE_URL);
     }
   }
 
